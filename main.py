@@ -5,13 +5,11 @@ import json
 import os
 import html
 import re
-import urllib.parse
 from datetime import datetime
 
 # Берем переменные из окружения Railway
-   BOT_TOKEN = "8947889236:AAENokSiozHKuS4sPDIVXI5O9TPcp0ULe0Q"
-   CHANNEL_ID = "-1002653720600"
-   
+BOT_TOKEN = os.getenv("BOT_TOKEN", "")
+CHANNEL_ID = os.getenv("CHANNEL_ID", "")
 
 RSS_FEEDS = [
     "https://news.google.com/rss/search?q=cryptocurrency",
@@ -65,12 +63,6 @@ def extract_image(entry):
         return match.group(1)
     return None
 
-def generate_ai_image_url(title):
-    """Генерирует AI-картинку через Pollinations."""
-    prompt = f"crypto cryptocurrency news, {title[:60]}, professional, no text"
-    encoded = urllib.parse.quote(prompt)
-    return f"https://image.pollinations.ai/prompt/{encoded}?width=1024&height=576&nologo=true"
-
 def format_post(entry, source_name):
     title = html.escape(entry.get("title", "Без заголовка")[:100])
     link = entry.get("link", "")
@@ -87,9 +79,10 @@ def format_post(entry, source_name):
 
 def send_to_telegram(text, image_url=None):
     """Отправляет сообщение в Telegram."""
-    if image_url:
-        caption = text if len(text) <= 1024 else text[:1000] + "..."
+    # Если есть картинка — отправляем с картинкой
+    if image_url and image_url.startswith("http"):
         url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto"
+        caption = text if len(text) <= 1024 else text[:1000] + "..."
         payload = {
             "chat_id": CHANNEL_ID,
             "photo": image_url,
@@ -100,11 +93,10 @@ def send_to_telegram(text, image_url=None):
             resp = requests.post(url, data=payload, timeout=10)
             if resp.ok:
                 return True
-            else:
-                print(f"Ошибка фото: {resp.status_code}")
         except Exception as e:
-            print(f"Ошибка сети фото: {e}")
+            print(f"    Ошибка с картинкой, постим текстом")
     
+    # Отправляем текст
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     payload = {
         "chat_id": CHANNEL_ID,
@@ -115,7 +107,7 @@ def send_to_telegram(text, image_url=None):
         resp = requests.post(url, data=payload, timeout=10)
         return resp.ok
     except Exception as e:
-        print(f"Ошибка текста: {e}")
+        print(f"    Ошибка: {e}")
         return False
 
 def check_feeds_and_post(seen):
@@ -130,8 +122,7 @@ def check_feeds_and_post(seen):
             source_name = feed.feed.get("title", feed_url.split("/")[2])
             entries_count = len(feed.entries)
             print(f"  Найдено: {entries_count} записей")
-            
-            for entry in feed.entries[:10]:
+           for entry in feed.entries[:10]:
                 link = entry.get("link")
                 if not link or link in seen:
                     continue
@@ -142,9 +133,7 @@ def check_feeds_and_post(seen):
                 print(f"  Публикую: {title[:60]}")
                 
                 post_text = format_post(entry, source_name)
-                image_url = extract_image(entry)
-                if not image_url:
-                    image_url = generate_ai_image_url(title)
+                image_url = extract_image(entry)  # Только из RSS, генерацию не делаем
                 
                 if send_to_telegram(post_text, image_url):
                     print(f"    ✓ OK")
@@ -154,7 +143,7 @@ def check_feeds_and_post(seen):
                 else:
                     print(f"    ✗ Ошибка")
         except Exception as e:
-            print(f"  Ошибка: {type(e).__name__}: {str(e)[:100]}")
+            print(f"  Ошибка: {type(e).name}: {str(e)[:100]}")
     
     print(f"[{datetime.now()}] Готово. Опубликовано: {new_count}")
     return seen
@@ -170,5 +159,5 @@ def main():
     save_seen(seen)
     print("✅ Всё готово")
 
-if __name__ == "__main__":
+if name == "main":
     main()
