@@ -9,8 +9,9 @@ import urllib.parse
 from datetime import datetime
 
 # Берем переменные из окружения Railway
-BOT_TOKEN = os.getenv("BOT_TOKEN", "")
-CHANNEL_ID = os.getenv("CHANNEL_ID", "")
+   BOT_TOKEN = "8947889236:AAENokSiozHKuS4sPDIVXI5O9TPcp0ULe0Q"
+   CHANNEL_ID = "-1002653720600"
+   
 
 RSS_FEEDS = [
     "https://news.google.com/rss/search?q=cryptocurrency",
