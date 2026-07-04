@@ -182,7 +182,7 @@ def check_feeds_and_post(seen):
                         print(f"    📷 С картинкой")
                     seen.add(link)
                     new_count += 1
-                    time.sleep(8)  # 8 секунд между постами, чтобы они приходили по одному
+                    time.sleep(21600)  # 8 секунд между постами, чтобы они приходили по одному
                 else:
                     print(f"    ✗ Ошибка")
         except Exception as e:
